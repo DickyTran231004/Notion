@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sci-Fi Radial Clock - Pixel Perfect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #121212;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .clock-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas {
+      display: block;
+      /* Hiệu ứng Glow Hologram nhẹ */
+      filter: drop-shadow(0 0 6px rgba(0, 243, 255, 0.4));
+    }
+  </style>
+</head>
+<body>
+
+  <div class="clock-wrapper">
+    <canvas id="scifiClock" width="500" height="500"></canvas>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('scifiClock');
+    const ctx = canvas.getContext('2d');
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    // Màu sắc Sci-Fi Cyan Neon
+    const themeColor = '#00f3ff';
+
+    function drawClock() {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+      const milliseconds = now.getMilliseconds();
+
+      // Xóa khung vẽ
+      ctx.clearRect(0, 0, width, height);
+
+      // --- 1. TÍNH GÓC QUAY (ĐƠN VỊ RADIAN) ---
+      // Góc 0 của Canvas ở góc 3 giờ -> trừ Math.PI / 2 để đưa gốc về góc 12 giờ
+      const secAngle = ((seconds + milliseconds / 1000) / 60) * 2 * Math.PI - Math.PI / 2;
+      const minAngle = ((minutes + seconds / 60) / 60) * 2 * Math.PI - Math.PI / 2;
+      const hourAngle = (((hours % 12) + minutes / 60) / 12) * 2 * Math.PI - Math.PI / 2;
+
+      // Cấu hình nét vẽ
+      ctx.strokeStyle = themeColor;
+      ctx.fillStyle = themeColor;
+      ctx.lineWidth = 2.5;
+
+      // --- 2. BÁN KÍNH CHUẨN TỶ LỆ ẢNH GỐC ---
+      const rHour = 115;  // Vòng trong (đủ rộng cho text)
+      const rMin  = 145;  // Vòng giữa
+      const rSec  = 175;  // Vòng ngoài
+
+      // --- 3. VẼ VÒNG CUNG VÀ KIM GIỜ (VÒNG TRONG) ---
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, rHour, -Math.PI / 2, hourAngle, false);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX + rHour * Math.cos(hourAngle), centerY + rHour * Math.sin(hourAngle));
+      ctx.stroke();
+
+      // Đoạn đuôi ngắn của kim giờ (chỉ hướng ngược lại ~25px)
+      const tailLength = 25;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX - tailLength * Math.cos(hourAngle), centerY - tailLength * Math.sin(hourAngle));
+      ctx.stroke();
+
+      // --- 4. VẼ VÒNG CUNG VÀ KIM PHÚT (VÒNG GIỮA) ---
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, rMin, -Math.PI / 2, minAngle, false);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX + rMin * Math.cos(minAngle), centerY + rMin * Math.sin(minAngle));
+      ctx.stroke();
+
+      // --- 5. VẼ VÒNG CUNG VÀ KIM GIÂY (VÒNG NGOÀI) ---
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, rSec, -Math.PI / 2, secAngle, false);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX + rSec * Math.cos(secAngle), centerY + rSec * Math.sin(secAngle));
+      ctx.stroke();
+
+      // --- 6. VẼ NÚT TRÒN TRUNG TÂM ---
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 7, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // --- 7. VẼ CHỮ SỐ TRỰC TIẾP LÊN CANVAS (CĂN LỀ CỐ ĐỊNH CHUẨN TỌA ĐỘ) ---
+      const hrsFormatted = String(hours).padStart(2, '0');
+      const minsFormatted = String(minutes).padStart(2, '0');
+      const secsFormatted = String(seconds).padStart(2, '0');
+      const timeStr = `${hrsFormatted}:${minsFormatted}:${secsFormatted}`;
+
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const dateStr = `${days[now.getDay()]} ${months[now.getMonth()]} ${now.getDate()}`;
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Vẽ Giờ: Phút: Giây
+      ctx.font = 'bold 22px "Share Tech Mono", monospace';
+      ctx.fillText(timeStr, centerX, centerY + 42);
+
+      // Vẽ Ngày tháng
+      ctx.font = '15px "Share Tech Mono", monospace';
+      ctx.fillText(dateStr, centerX, centerY + 72);
+
+      requestAnimationFrame(drawClock);
+    }
+
+    // Khởi chạy
+    requestAnimationFrame(drawClock);
+  </script>
+</body>
+</html>
